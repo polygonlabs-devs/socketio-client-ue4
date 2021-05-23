@@ -23,7 +23,7 @@ Current platform issues:
 * Lumin platform untested - see [issue 114](https://github.com/getnamo/socketio-client-ue4/issues/114)
 
 HTTPS is only supported through a little change in the source code.
-* OpenSSL Support - <a href="https://github.com/dobby5/socketio-client-ue4/blob/0d3420f626704802d457e125bf01d0d4d26bbfe3/Source/SocketIOLib/SocketIOLib.Build.cs#L63-L73">Remove this declaration and compile the code, that's all.</a>
+* OpenSSL Support - enabled in this branch (comment block https://github.com/getnamo/socketio-client-ue4/blob/ssl/Source/SocketIOLib/SocketIOLib.Build.cs#L65 to disable)
 
 ## Compatibility table
 
