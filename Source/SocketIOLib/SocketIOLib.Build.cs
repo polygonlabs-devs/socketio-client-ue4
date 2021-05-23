@@ -60,7 +60,7 @@ namespace UnrealBuildTool.Rules
 	            }
 	            );
 
-			/*
+			
 			//Setup TLS support | Maybe other platforms work as well (untested)
 			if (Target.Platform == UnrealTargetPlatform.Win64 ||
 				Target.Platform == UnrealTargetPlatform.Win32 ||
@@ -70,7 +70,7 @@ namespace UnrealBuildTool.Rules
 			{
 				PublicDefinitions.Add("SIO_TLS");
 			}
-			*/
+			
 	    }
 	}
 }
