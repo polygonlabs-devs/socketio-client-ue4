@@ -23,7 +23,10 @@
 #include <cstdint>
 #define INTIALIZER(__TYPE__)
 
-#include "CoreMinimal.h" 
+#include "CoreMinimal.h"
+
+//disable TLS
+#define SIO_TLS 0
 
 #if PLATFORM_WINDOWS
 //#define WIN32_LEAN_AND_MEAN
@@ -43,7 +46,7 @@
 	typedef websocketpp::config::debug_asio client_config;
   #endif //SIO_TLS
 #else
-  #if defined(SIO_TLS)
+  #if SIO_TLS
 	#include <websocketpp/config/asio_client.hpp>
 	typedef websocketpp::config::asio_tls_client client_config;
   #else
@@ -220,7 +223,7 @@
             std::string m_sid;
             std::string m_base_url;
             std::string m_query_string;
-            std::string m_path;
+
             std::map<std::string, std::string> m_http_headers;
 
             unsigned int m_ping_interval;
@@ -256,6 +259,8 @@
             unsigned m_reconn_attempts;
 
             unsigned m_reconn_made;
+
+            std::string m_path;
 
             friend class sio::client;
             friend class sio::socket;
