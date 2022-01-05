@@ -246,7 +246,7 @@ void FSocketIONative::EmitRawBinary(const FString& EventName, uint8* Data, int32
 }
 
 void FSocketIONative::OnEvent(const FString& EventName, 
-	TFunction< void(const FString&, const TSharedPtr<FJsonValue>&)> CallbackFunction, 
+	TFunction< void(const FString&, const TArray < TSharedPtr<FJsonValue> >&)> CallbackFunction,
 	const FString& Namespace /*= FString(TEXT("/"))*/,
 	ESIOThreadOverrideOption CallbackThread /*= USE_DEFAULT*/)
 {
@@ -256,13 +256,19 @@ void FSocketIONative::OnEvent(const FString& EventName,
 	BoundEvent.Namespace = Namespace;
 	EventFunctionMap.Add(EventName, BoundEvent);
 
-	OnRawEvent(EventName, [&, CallbackFunction](const FString& Event, const sio::message::ptr& RawMessage) {
-		CallbackFunction(Event, USIOMessageConvert::ToJsonValue(RawMessage));
+	OnRawEvent(EventName, [&, CallbackFunction](const FString& Event, const sio::message::list& RawMessage) {
+		TArray< TSharedPtr<FJsonValue> > InArray;
+		InArray.Reset(RawMessage.size());
+		for (int i = 0; i < RawMessage.size(); ++i)
+		{
+			InArray.Add(USIOMessageConvert::ToJsonValue(RawMessage[i]));
+		}
+		CallbackFunction(Event, InArray);
 	}, Namespace, CallbackThread);
 }
 
 void FSocketIONative::OnRawEvent(const FString& EventName, 
-	TFunction< void(const FString&, const sio::message::ptr&)> CallbackFunction, 
+	TFunction< void(const FString&, const sio::message::list&)> CallbackFunction, 
 	const FString& Namespace /*= FString(TEXT("/"))*/,
 	ESIOThreadOverrideOption CallbackThread /*= USE_DEFAULT*/)
 {
@@ -288,12 +294,12 @@ void FSocketIONative::OnRawEvent(const FString& EventName,
 			break;
 		}
 
-		const TFunction< void(const FString&, const sio::message::ptr&)> SafeFunction = CallbackFunction;	//copy the function so it remains in context
+		const TFunction< void(const FString&, const sio::message::list&)> SafeFunction = CallbackFunction;	//copy the function so it remains in context
 
 		PrivateClient->socket(USIOMessageConvert::StdString(Namespace))->on(
 			USIOMessageConvert::StdString(EventName),
 			sio::socket::event_listener_aux(
-			[&, SafeFunction, bCallbackThisEventOnGameThread](std::string const& name, sio::message::ptr const& data, bool isAck, sio::message::list &ack_resp)
+			[&, SafeFunction, bCallbackThisEventOnGameThread](std::string const& name, sio::message::list const& data, bool isAck, sio::message::list &ack_resp)
 			{
 				if (SafeFunction != nullptr)
 				{
@@ -324,16 +330,16 @@ void FSocketIONative::OnBinaryEvent(const FString& EventName, TFunction< void(co
 	PrivateClient->socket(USIOMessageConvert::StdString(Namespace))->on(
 		USIOMessageConvert::StdString(EventName),
 		sio::socket::event_listener_aux(
-			[&, SafeFunction](std::string const& name, sio::message::ptr const& data, bool isAck, sio::message::list &ack_resp)
+			[&, SafeFunction](std::string const& name, sio::message::list const& data, bool isAck, sio::message::list &ack_resp)
 	{
 		const FString SafeName = USIOMessageConvert::FStringFromStd(name);
 
 		//Construct raw buffer
-		if (data->get_flag() == sio::message::flag_binary)
+		if (data[0]->get_flag() == sio::message::flag_binary)
 		{
 			TArray<uint8> Buffer;
-			int32 BufferSize = data->get_binary()->size();
-			auto MessageBuffer = data->get_binary();
+			int32 BufferSize = data[0]->get_binary()->size();
+			auto MessageBuffer = data[0]->get_binary();
 			Buffer.Append((uint8*)(MessageBuffer->data()), BufferSize);
 
 			if (bCallbackOnGameThread)

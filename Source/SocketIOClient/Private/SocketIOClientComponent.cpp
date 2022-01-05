@@ -564,10 +564,10 @@ void USocketIOClientComponent::EmitNative(const FString& EventName, const SIO_TE
 
 void USocketIOClientComponent::BindEventToGenericEvent(const FString& EventName, const FString& Namespace)
 {
-	NativeClient->OnEvent(EventName, [&](const FString& Event, const TSharedPtr<FJsonValue>& EventValue)
+	NativeClient->OnEvent(EventName, [&](const FString& Event, const TArray<TSharedPtr<FJsonValue> >& EventValue)
 	{
 		USIOJsonValue* NewValue = NewObject<USIOJsonValue>();
-		TSharedPtr<FJsonValue> NonConstValue = EventValue;
+		TSharedPtr<FJsonValue> NonConstValue = EventValue[0];
 		NewValue->SetRootValue(NonConstValue);
 		OnGenericEvent.Broadcast(Event, NewValue);
 	}, Namespace);
@@ -591,9 +591,9 @@ void USocketIOClientComponent::BindEventToFunction(const FString& EventName,
 		{
 			Target = WorldContextObject;
 		}
-		OnNativeEvent(EventName, [&, FunctionName, Target](const FString& Event, const TSharedPtr<FJsonValue>& Message)
+		OnNativeEvent(EventName, [&, FunctionName, Target](const FString& Event, const TArray<TSharedPtr<FJsonValue> >& Message)
 		{
-			CallBPFunctionWithMessage(Target, FunctionName, Message);
+			CallBPFunctionWithMessage(Target, FunctionName, Message[0]);
 		}, Namespace, ThreadOverride);
 	}
 	else
@@ -604,7 +604,7 @@ void USocketIOClientComponent::BindEventToFunction(const FString& EventName,
 }
 
 void USocketIOClientComponent::OnNativeEvent(const FString& EventName,
-	TFunction< void(const FString&, const TSharedPtr<FJsonValue>&)> CallbackFunction,
+	TFunction< void(const FString&, const TArray<TSharedPtr<FJsonValue> >&)> CallbackFunction,
 	const FString& Namespace /*= FString(TEXT("/"))*/,
 	ESIOThreadOverrideOption ThreadOverride /*= USE_DEFAULT*/)
 {

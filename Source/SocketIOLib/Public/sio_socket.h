@@ -48,7 +48,7 @@ namespace sio
     class SOCKETIOLIB_API socket
     {
     public:
-        typedef std::function<void(const std::string& name,message::ptr const& message,bool need_ack, message::list& ack_message)> event_listener_aux;
+        typedef std::function<void(const std::string& name,message::list const& message,bool need_ack, message::list& ack_message)> event_listener_aux;
         
         typedef std::function<void(event& event)> event_listener;
         

@@ -390,7 +390,7 @@ public:
 	* @param ThreadOverride	Optional override to receive event on specified thread. Note NETWORK thread is lower latency but unsafe for a lot of blueprint use. Use with CAUTION.
 	*/
 	void OnNativeEvent(	const FString& EventName,
-						TFunction< void(const FString&, const TSharedPtr<FJsonValue>&)> CallbackFunction,
+						TFunction< void(const FString&, const TArray<TSharedPtr<FJsonValue> >&)> CallbackFunction,
 						const FString& Namespace = TEXT("/"),
 		ESIOThreadOverrideOption ThreadOverride = USE_DEFAULT);
 

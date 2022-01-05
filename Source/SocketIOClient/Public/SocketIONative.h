@@ -51,7 +51,7 @@ struct TSetFunctionWrapper
 //used for early binds
 struct FSIOBoundEvent
 {
-	TFunction< void(const FString&, const TSharedPtr<FJsonValue>&)> Function;
+	TFunction< void(const FString&, const TArray<TSharedPtr<FJsonValue> >&)> Function;
 	FString Namespace;
 };
 
@@ -333,7 +333,7 @@ public:
 	*/
 	void OnEvent(
 		const FString& EventName,
-		TFunction< void(const FString&, const TSharedPtr<FJsonValue>&)> CallbackFunction,
+		TFunction< void(const FString&, const TArray<TSharedPtr<FJsonValue> >&)> CallbackFunction,
 		const FString& Namespace = TEXT("/"),
 		ESIOThreadOverrideOption CallbackThread = USE_DEFAULT);
 
@@ -347,7 +347,7 @@ public:
 	*/
 	void OnRawEvent(
 		const FString& EventName,
-		TFunction< void(const FString&, const sio::message::ptr&)> CallbackFunction,
+		TFunction< void(const FString&, const sio::message::list&)> CallbackFunction,
 		const FString& Namespace = TEXT("/"),
 		ESIOThreadOverrideOption CallbackThread = USE_DEFAULT);
 	/**
