@@ -336,7 +336,7 @@ namespace sio
     {
         if (ec || m_con.expired())
         {
-            if (ec != asio::error::operation_aborted)
+            //if (ec != asio::error::operation_aborted)
                 //LOG("ping exit,con is expired?" << m_con.expired() << ",ec:" << ec.message() << endl);
             return;
         }
@@ -346,6 +346,13 @@ namespace sio
                 lib::error_code ec;
                 this->m_client.send(this->m_con, *payload, frame::opcode::text, ec);
             });
+        lib::error_code e_code = lib::error_code(asio::error::operation_aborted);
+        if (m_ping_timer)
+        {
+	        m_ping_timer->expires_from_now(std::chrono::milliseconds(m_ping_interval), e_code);
+	        m_ping_timer->async_wait(lib::bind(&client_impl::ping, this, lib::placeholders::_1));
+	        DEBUG_LOG(LogTemp, Log, TEXT("Starting ping timeout 1"));
+		}
         if (!m_ping_timeout_timer)
         {
             m_ping_timeout_timer.reset(new asio::steady_timer(m_client.get_io_service()));
@@ -514,9 +521,9 @@ namespace sio
     void client_impl::on_message(connection_hdl, client_type::message_ptr msg)
     {
         if (m_ping_timeout_timer) {
-            asio::error_code ec;
-            m_ping_timeout_timer->expires_from_now(milliseconds(m_ping_timeout), ec);
-            m_ping_timeout_timer->async_wait(std::bind(&client_impl::timeout_pong, this, std::placeholders::_1));
+			m_ping_timeout_timer->cancel();
+			m_ping_timeout_timer.reset();
+			DEBUG_LOG(LogTemp, Log, TEXT("Cancelled m_ping_timeout_timer timeout from on_message"));
         }
         // Parse the incoming message according to socket.IO rules
         m_packet_mgr.put_payload(msg->get_payload());
@@ -554,6 +561,16 @@ namespace sio
                 m_ping_timeout = 60000;
             }
 
+			m_ping_timer.reset(new asio::system_timer(m_client.get_io_service()));
+
+			lib::error_code ec;
+			m_ping_timer->expires_from_now(std::chrono::milliseconds(m_ping_interval), ec);
+			if (ec) {
+				DEBUG_LOG(LogTemp, Log, TEXT("on_handshake ec: %s"), ec.message().c_str());
+			}
+			//DEBUG_LOG(LogTemp, Log, TEXT("Started ping timeout due to on_handshake"));
+
+			m_ping_timer->async_wait(lib::bind(&client_impl::ping, this, lib::placeholders::_1));
             return;
         }
     failed:
@@ -576,6 +593,18 @@ namespace sio
         }
     }
 
+	void client_impl::on_pong()
+	{
+		DEBUG_LOG(LogTemp, Log, TEXT("Received pong"));
+		if (m_ping_timeout_timer)
+		{
+			lib::error_code ec;
+			m_ping_timeout_timer->cancel(ec);
+			m_ping_timeout_timer.reset();
+			DEBUG_LOG(LogTemp, Log, TEXT("m_ping_timeout_timer cancelled by on_pong (ec %d)"), ec.value());
+		}
+	}
+
     void client_impl::on_decode(packet const& p)
     {
         switch (p.get_frame())
@@ -595,6 +624,9 @@ namespace sio
             break;
         case packet::frame_ping:
             this->on_ping();
+            break;
+        case packet::frame_pong:
+            this->on_pong();
             break;
 
         default:
